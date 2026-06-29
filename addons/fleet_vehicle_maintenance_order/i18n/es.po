@@ -1,0 +1,397 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* fleet_vehicle_maintenance_order
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-26 00:00+0000\n"
+"PO-Revision-Date: 2026-06-26 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Fleet Vehicle Maintenance Orders"
+msgstr "Ordenes de mantenimiento vehicular"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Vehicle maintenance order workflow for Fleet"
+msgstr "Flujo de ordenes de mantenimiento vehicular para Flota"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Maintenance Orders"
+msgstr "Ordenes de mantenimiento"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Maint. Orders"
+msgstr "Ordenes mant."
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Vehicle Systems"
+msgstr "Sistemas vehiculares"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Vehicle System"
+msgstr "Sistema vehicular"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Vehicle Maintenance Order"
+msgstr "Orden de mantenimiento vehicular"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Vehicle Maintenance Activity Line"
+msgstr "Linea de actividad de mantenimiento vehicular"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Vehicle Maintenance Part Line"
+msgstr "Linea de repuesto de mantenimiento vehicular"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Vehicle Maintenance Labor Line"
+msgstr "Linea de mano de obra de mantenimiento vehicular"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Order"
+msgstr "Orden"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Vehicle"
+msgstr "Vehiculo"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Driver / Reporter"
+msgstr "Chofer / Reportante"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Responsible"
+msgstr "Responsable"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Company"
+msgstr "Compania"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Currency"
+msgstr "Moneda"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Report Date"
+msgstr "Fecha de reporte"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Diagnosis Date"
+msgstr "Fecha de diagnostico"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Approval Date"
+msgstr "Fecha de aprobacion"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Execution Start"
+msgstr "Inicio de ejecucion"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Finish Date"
+msgstr "Fecha de finalizacion"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Close Date"
+msgstr "Fecha de cierre"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Odometer"
+msgstr "Odometro"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Reported Problem"
+msgstr "Problema reportado"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Diagnosis"
+msgstr "Diagnostico"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Observations"
+msgstr "Observaciones"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Affected Systems"
+msgstr "Sistemas afectados"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Activities"
+msgstr "Actividades"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Required Parts"
+msgstr "Repuestos requeridos"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Labor"
+msgstr "Mano de obra"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Status"
+msgstr "Estado"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Activity Cost"
+msgstr "Costo de actividades"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Parts Cost"
+msgstr "Costo de repuestos"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Labor Cost"
+msgstr "Costo de mano de obra"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Total Cost"
+msgstr "Costo total"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Activity"
+msgstr "Actividad"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Description"
+msgstr "Descripcion"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Estimated Cost"
+msgstr "Costo estimado"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Product"
+msgstr "Producto"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Quantity"
+msgstr "Cantidad"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Unit of Measure"
+msgstr "Unidad de medida"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Unit Cost"
+msgstr "Costo unitario"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Work"
+msgstr "Trabajo"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Technician / Provider"
+msgstr "Tecnico / Proveedor"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Hourly Rate"
+msgstr "Tarifa por hora"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Fixed Cost"
+msgstr "Costo fijo"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Sequence"
+msgstr "Secuencia"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Name"
+msgstr "Nombre"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Code"
+msgstr "Codigo"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Active"
+msgstr "Activo"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "New"
+msgstr "Nuevo"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Reported"
+msgstr "Reportada"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "In Diagnosis"
+msgstr "En diagnostico"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Pending Approval"
+msgstr "Pendiente de aprobacion"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Approved"
+msgstr "Aprobada"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "In Execution"
+msgstr "En ejecucion"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Waiting Parts"
+msgstr "Pendiente de repuestos"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Finished"
+msgstr "Finalizada"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Closed"
+msgstr "Cerrada"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Cancelled"
+msgstr "Cancelada"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "From Stock"
+msgstr "Desde inventario"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "To Purchase"
+msgstr "Por comprar"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "To Define"
+msgstr "Por definir"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Search Maintenance Orders"
+msgstr "Buscar ordenes de mantenimiento"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Open"
+msgstr "Abiertas"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Report Month"
+msgstr "Mes de reporte"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Start Diagnosis"
+msgstr "Iniciar diagnostico"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Request Approval"
+msgstr "Solicitar aprobacion"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Approve"
+msgstr "Aprobar"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Start Execution"
+msgstr "Iniciar ejecucion"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Finish"
+msgstr "Finalizar"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Close"
+msgstr "Cerrar"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Reset to Reported"
+msgstr "Restablecer a reportada"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Request"
+msgstr "Solicitud"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Dates"
+msgstr "Fechas"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Parts"
+msgstr "Repuestos"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Costs"
+msgstr "Costos"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Describe the issue reported by the driver or responsible person."
+msgstr "Describa la novedad reportada por el chofer o responsable."
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Record the mechanic diagnosis."
+msgstr "Registre el diagnostico del mecanico."
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Person who reported the issue. It can be the assigned driver or another contact."
+msgstr "Persona que reporto la novedad. Puede ser el chofer asignado u otro contacto."
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Add a diagnosis before requesting approval."
+msgstr "Agregue un diagnostico antes de solicitar aprobacion."
+
+#. module: fleet_vehicle_maintenance_order
+msgid "The vehicle system code must be unique."
+msgstr "El codigo del sistema vehicular debe ser unico."
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Part quantity must be greater than zero."
+msgstr "La cantidad del repuesto debe ser mayor que cero."
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Labor hours cannot be negative."
+msgstr "Las horas de mano de obra no pueden ser negativas."
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Sistema del Motor"
+msgstr "Sistema del Motor"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Sistema de Transmision"
+msgstr "Sistema de Transmision"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Sistema Electrico"
+msgstr "Sistema Electrico"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Sistema de Frenos"
+msgstr "Sistema de Frenos"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Sistema de Suspension"
+msgstr "Sistema de Suspension"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Sistema de Direccion"
+msgstr "Sistema de Direccion"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Sistema de Escape"
+msgstr "Sistema de Escape"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Llantas y Ruedas"
+msgstr "Llantas y Ruedas"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Lubricantes y Fluidos"
+msgstr "Lubricantes y Fluidos"
+
+#. module: fleet_vehicle_maintenance_order
+msgid "Otros"
+msgstr "Otros"

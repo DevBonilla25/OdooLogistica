@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="vehicle_system_engine" model="fleet.vehicle.system">
+        <field name="name">Sistema del Motor</field>
+        <field name="code">engine</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="vehicle_system_transmission" model="fleet.vehicle.system">
+        <field name="name">Sistema de Transmision</field>
+        <field name="code">transmission</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="vehicle_system_electrical" model="fleet.vehicle.system">
+        <field name="name">Sistema Electrico</field>
+        <field name="code">electrical</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="vehicle_system_brakes" model="fleet.vehicle.system">
+        <field name="name">Sistema de Frenos</field>
+        <field name="code">brakes</field>
+        <field name="sequence">40</field>
+    </record>
+    <record id="vehicle_system_suspension" model="fleet.vehicle.system">
+        <field name="name">Sistema de Suspension</field>
+        <field name="code">suspension</field>
+        <field name="sequence">50</field>
+    </record>
+    <record id="vehicle_system_steering" model="fleet.vehicle.system">
+        <field name="name">Sistema de Direccion</field>
+        <field name="code">steering</field>
+        <field name="sequence">60</field>
+    </record>
+    <record id="vehicle_system_exhaust" model="fleet.vehicle.system">
+        <field name="name">Sistema de Escape</field>
+        <field name="code">exhaust</field>
+        <field name="sequence">70</field>
+    </record>
+    <record id="vehicle_system_tires" model="fleet.vehicle.system">
+        <field name="name">Llantas y Ruedas</field>
+        <field name="code">tires_wheels</field>
+        <field name="sequence">80</field>
+    </record>
+    <record id="vehicle_system_fluids" model="fleet.vehicle.system">
+        <field name="name">Lubricantes y Fluidos</field>
+        <field name="code">fluids</field>
+        <field name="sequence">90</field>
+    </record>
+    <record id="vehicle_system_other" model="fleet.vehicle.system">
+        <field name="name">Otros</field>
+        <field name="code">other</field>
+        <field name="sequence">100</field>
+    </record>
+</odoo>
