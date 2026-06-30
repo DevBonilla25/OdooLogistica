@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_employee_form_inherit_orangehrm_driver_sync" model="ir.ui.view">
+        <field name="name">hr.employee.form.orangehrm.driver.sync</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="OrangeHRM" name="orangehrm_driver_sync">
+                    <group>
+                        <group string="Origen">
+                            <field name="orangehrm_employee_id" readonly="1"/>
+                            <field name="orangehrm_employee_number" readonly="1"/>
+                            <field name="orangehrm_job_title" readonly="1"/>
+                            <field name="orangehrm_employment_status" readonly="1"/>
+                        </group>
+                        <group string="Flota">
+                            <field name="is_fleet_driver"/>
+                            <field name="driver_type"/>
+                            <field name="orangehrm_last_sync_at" readonly="1"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

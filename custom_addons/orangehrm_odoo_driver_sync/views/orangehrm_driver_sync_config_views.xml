@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_orangehrm_driver_sync_config_list" model="ir.ui.view">
+        <field name="name">orangehrm.driver.sync.config.list</field>
+        <field name="model">orangehrm.driver.sync.config</field>
+        <field name="arch" type="xml">
+            <list string="Configuraciones OrangeHRM">
+                <field name="name"/>
+                <field name="active"/>
+                <field name="orangehrm_base_url"/>
+                <field name="auth_type"/>
+                <field name="frequency"/>
+                <field name="last_sync_at"/>
+                <field name="last_sync_status" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_orangehrm_driver_sync_config_form" model="ir.ui.view">
+        <field name="name">orangehrm.driver.sync.config.form</field>
+        <field name="model">orangehrm.driver.sync.config</field>
+        <field name="arch" type="xml">
+            <form string="OrangeHRM Sync">
+                <header>
+                    <button name="action_sync_drivers" string="Sincronizar choferes desde OrangeHRM" type="object" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Conexion">
+                            <field name="active"/>
+                            <field name="orangehrm_base_url" placeholder="http://192.168.1.10/orangehrm"/>
+                            <field name="orangehrm_employee_endpoint"/>
+                            <field name="timeout"/>
+                            <field name="frequency"/>
+                        </group>
+                        <group string="Autenticacion">
+                            <field name="auth_type"/>
+                            <field name="username" invisible="auth_type not in ('basic',)"/>
+                            <field name="password" password="True" invisible="auth_type == 'none'"/>
+                            <field name="api_key_header" invisible="auth_type != 'api_key'"/>
+                        </group>
+                    </group>
+                    <group string="Filtro de cargos">
+                        <field name="driver_job_titles" nolabel="1" placeholder="Chofer Interno&#10;Chofer Externo&#10;Chofer&#10;Conductor"/>
+                    </group>
+                    <group string="Ultima sincronizacion">
+                        <group>
+                            <field name="last_sync_at"/>
+                            <field name="last_sync_status" widget="badge"/>
+                        </group>
+                        <group>
+                            <field name="last_sync_message" nolabel="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_orangehrm_driver_sync_config" model="ir.actions.act_window">
+        <field name="name">OrangeHRM Sync</field>
+        <field name="res_model">orangehrm.driver.sync.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'default_name': 'OrangeHRM'}</field>
+    </record>
+
+    <menuitem id="menu_orangehrm_driver_sync_root"
+              name="OrangeHRM Sync"
+              parent="fleet.fleet_configuration"
+              sequence="90"
+              groups="fleet.fleet_group_manager,base.group_system"/>
+
+    <menuitem id="menu_orangehrm_driver_sync_config"
+              name="Configuracion"
+              parent="menu_orangehrm_driver_sync_root"
+              action="action_orangehrm_driver_sync_config"
+              sequence="10"
+              groups="fleet.fleet_group_manager,base.group_system"/>
+
+    <menuitem id="menu_orangehrm_driver_sync_log"
+              name="Historial"
+              parent="menu_orangehrm_driver_sync_root"
+              action="action_orangehrm_driver_sync_log"
+              sequence="20"
+              groups="fleet.fleet_group_manager,base.group_system"/>
+</odoo>
