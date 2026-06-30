@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_orangehrm_driver_sync_log_list" model="ir.ui.view">
-        <field name="name">orangehrm.driver.sync.log.list</field>
-        <field name="model">orangehrm.driver.sync.log</field>
+    <record id="view_orangehrm_user_sync_log_list" model="ir.ui.view">
+        <field name="name">orangehrm.user.sync.log.list</field>
+        <field name="model">orangehrm.user.sync.log</field>
         <field name="arch" type="xml">
             <list string="Logs OrangeHRM" decoration-success="state == 'success'" decoration-warning="state == 'warning'" decoration-danger="state == 'error'">
                 <field name="sync_at"/>
                 <field name="state" widget="badge" decoration-success="state == 'success'" decoration-warning="state == 'warning'" decoration-danger="state == 'error'"/>
                 <field name="total_read"/>
-                <field name="total_drivers"/>
+                <field name="total_employees"/>
+                <field name="total_fleet_drivers"/>
+                <field name="total_salespersons"/>
                 <field name="total_created"/>
                 <field name="total_updated"/>
                 <field name="total_skipped"/>
@@ -17,9 +19,9 @@
         </field>
     </record>
 
-    <record id="view_orangehrm_driver_sync_log_form" model="ir.ui.view">
-        <field name="name">orangehrm.driver.sync.log.form</field>
-        <field name="model">orangehrm.driver.sync.log</field>
+    <record id="view_orangehrm_user_sync_log_form" model="ir.ui.view">
+        <field name="name">orangehrm.user.sync.log.form</field>
+        <field name="model">orangehrm.user.sync.log</field>
         <field name="arch" type="xml">
             <form string="Log OrangeHRM" create="0" edit="0">
                 <sheet>
@@ -36,7 +38,9 @@
                         </group>
                         <group>
                             <field name="total_read"/>
-                            <field name="total_drivers"/>
+                            <field name="total_employees"/>
+                            <field name="total_fleet_drivers"/>
+                            <field name="total_salespersons"/>
                             <field name="total_created"/>
                             <field name="total_updated"/>
                             <field name="total_skipped"/>
@@ -51,9 +55,9 @@
         </field>
     </record>
 
-    <record id="view_orangehrm_driver_sync_log_search" model="ir.ui.view">
-        <field name="name">orangehrm.driver.sync.log.search</field>
-        <field name="model">orangehrm.driver.sync.log</field>
+    <record id="view_orangehrm_user_sync_log_search" model="ir.ui.view">
+        <field name="name">orangehrm.user.sync.log.search</field>
+        <field name="model">orangehrm.user.sync.log</field>
         <field name="arch" type="xml">
             <search string="Buscar logs OrangeHRM">
                 <field name="name"/>
@@ -65,9 +69,9 @@
         </field>
     </record>
 
-    <record id="action_orangehrm_driver_sync_log" model="ir.actions.act_window">
+    <record id="action_orangehrm_user_sync_log" model="ir.actions.act_window">
         <field name="name">Logs OrangeHRM</field>
-        <field name="res_model">orangehrm.driver.sync.log</field>
+        <field name="res_model">orangehrm.user.sync.log</field>
         <field name="view_mode">list,form</field>
     </record>
 </odoo>

@@ -1,9 +1,9 @@
 from odoo import fields, models
 
 
-class OrangeHrmDriverSyncLog(models.Model):
-    _name = "orangehrm.driver.sync.log"
-    _description = "Log de sincronizacion de choferes OrangeHRM"
+class OrangeHrmUserSyncLog(models.Model):
+    _name = "orangehrm.user.sync.log"
+    _description = "Log de sincronizacion de empleados OrangeHRM"
     _order = "sync_at desc, id desc"
 
     name = fields.Char(
@@ -27,7 +27,9 @@ class OrangeHrmDriverSyncLog(models.Model):
         default="success",
     )
     total_read = fields.Integer(string="Consultados")
-    total_drivers = fields.Integer(string="Choferes detectados")
+    total_employees = fields.Integer(string="Empleados sincronizados")
+    total_fleet_drivers = fields.Integer(string="Choferes detectados")
+    total_salespersons = fields.Integer(string="Vendedores detectados")
     total_created = fields.Integer(string="Creados")
     total_updated = fields.Integer(string="Actualizados")
     total_skipped = fields.Integer(string="Omitidos")

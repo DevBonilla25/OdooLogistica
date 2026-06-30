@@ -22,13 +22,33 @@ class HrEmployee(models.Model):
         string="Estado laboral OrangeHRM",
         copy=False,
     )
+    orangehrm_termination_id = fields.Char(
+        string="ID terminacion OrangeHRM",
+        copy=False,
+    )
     orangehrm_last_sync_at = fields.Datetime(
         string="Ultima sincronizacion OrangeHRM",
         copy=False,
         readonly=True,
     )
+    orangehrm_sync_role = fields.Selection(
+        [
+            ("employee", "Empleado"),
+            ("fleet_driver", "Chofer de flota"),
+            ("salesperson", "Vendedor"),
+        ],
+        string="Rol sincronizado",
+        default="employee",
+        copy=False,
+        index=True,
+    )
     is_fleet_driver = fields.Boolean(
         string="Chofer de flota",
+        copy=False,
+        index=True,
+    )
+    is_orangehrm_salesperson = fields.Boolean(
+        string="Vendedor OrangeHRM",
         copy=False,
         index=True,
     )

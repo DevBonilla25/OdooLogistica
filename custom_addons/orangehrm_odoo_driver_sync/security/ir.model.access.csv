@@ -1,6 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_orangehrm_driver_sync_config_manager,orangehrm.driver.sync.config.manager,model_orangehrm_driver_sync_config,fleet.fleet_group_manager,1,1,1,1
-access_orangehrm_driver_sync_config_system,orangehrm.driver.sync.config.system,model_orangehrm_driver_sync_config,base.group_system,1,1,1,1
-access_orangehrm_driver_sync_log_user,orangehrm.driver.sync.log.user,model_orangehrm_driver_sync_log,fleet.fleet_group_user,1,0,0,0
-access_orangehrm_driver_sync_log_manager,orangehrm.driver.sync.log.manager,model_orangehrm_driver_sync_log,fleet.fleet_group_manager,1,1,1,0
-access_orangehrm_driver_sync_log_system,orangehrm.driver.sync.log.system,model_orangehrm_driver_sync_log,base.group_system,1,1,1,1

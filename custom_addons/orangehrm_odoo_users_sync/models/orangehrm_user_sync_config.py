@@ -8,8 +8,8 @@ from odoo.exceptions import UserError
 _logger = logging.getLogger(__name__)
 
 
-class OrangeHrmDriverSyncConfig(models.Model):
-    _name = "orangehrm.driver.sync.config"
+class OrangeHrmUserSyncConfig(models.Model):
+    _name = "orangehrm.user.sync.config"
     _description = "Configuracion de sincronizacion OrangeHRM"
     _inherit = ["mail.thread"]
 
@@ -52,9 +52,18 @@ class OrangeHrmDriverSyncConfig(models.Model):
         default="X-API-Key",
     )
     driver_job_titles = fields.Text(
-        string="Cargos sincronizados",
+        string="Cargos de chofer",
         default="Chofer Interno\nChofer Externo\nChofer\nConductor",
         help="Un cargo por linea. La comparacion no distingue mayusculas.",
+    )
+    salesperson_job_titles = fields.Text(
+        string="Cargos de vendedor",
+        default="Vendedor\nAsesor Comercial\nEjecutivo Comercial",
+        help="Un cargo por linea. Se usara en fases posteriores para reglas comerciales.",
+    )
+    sync_terminated = fields.Boolean(
+        string="Sincronizar empleados terminados",
+        default=False,
     )
     timeout = fields.Integer(
         string="Timeout (segundos)",
@@ -89,11 +98,11 @@ class OrangeHrmDriverSyncConfig(models.Model):
         copy=False,
     )
 
-    def action_sync_drivers(self):
+    def action_sync_users(self):
         self.ensure_one()
-        log = self._sync_drivers()
+        log = self._sync_users()
         action = self.env["ir.actions.actions"]._for_xml_id(
-            "orangehrm_odoo_driver_sync.action_orangehrm_driver_sync_log"
+            "orangehrm_odoo_users_sync.action_orangehrm_user_sync_log"
         )
         action["domain"] = [("id", "=", log.id)]
         action["views"] = [(False, "form")]
@@ -104,11 +113,11 @@ class OrangeHrmDriverSyncConfig(models.Model):
     def _normalize_text(cls, value):
         return (value or "").strip().casefold()
 
-    def _allowed_job_titles(self):
+    def _title_set(self, field_name):
         self.ensure_one()
         return {
             self._normalize_text(line)
-            for line in (self.driver_job_titles or "").splitlines()
+            for line in (self[field_name] or "").splitlines()
             if line.strip()
         }
 
@@ -142,8 +151,15 @@ class OrangeHrmDriverSyncConfig(models.Model):
 
     def _fetch_employees(self):
         self.ensure_one()
-        response = requests.get(self._build_url(), **self._request_kwargs())
-        response.raise_for_status()
+        try:
+            response = requests.get(self._build_url(), **self._request_kwargs())
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as error:
+            if error.response is not None and error.response.status_code == 401:
+                raise UserError(
+                    _("OrangeHRM rechazo la consulta con 401 Unauthorized. Revise el tipo de autenticacion, token, usuario/contrasena o cookie de sesion configurada.")
+                ) from error
+            raise
         payload = response.json()
         if isinstance(payload, list):
             return payload
@@ -182,7 +198,8 @@ class OrangeHrmDriverSyncConfig(models.Model):
         middle_name = self._get_nested_value(employee_data, ["middleName", "middle_name"])
         last_name = self._get_nested_value(employee_data, ["lastName", "last_name"])
         full_name = self._get_nested_value(employee_data, ["name", "fullName", "full_name"])
-        name = full_name or " ".join(part for part in [first_name, middle_name, last_name] if part)
+        name_parts = [first_name, middle_name, last_name]
+        name = full_name or " ".join(part.strip() for part in name_parts if part)
         job_title = self._get_nested_value(
             employee_data,
             ["jobTitle.title", "jobTitle.name", "job_title", "jobTitle", "jobSpecification.title"],
@@ -191,12 +208,14 @@ class OrangeHrmDriverSyncConfig(models.Model):
             employee_data,
             ["employmentStatus.name", "employmentStatus.title", "employment_status", "employeeStatus"],
         )
+        termination_id = self._get_nested_value(employee_data, ["terminationId", "termination_id"])
         return {
             "orangehrm_employee_id": str(employee_id) if employee_id else False,
             "orangehrm_employee_number": str(employee_number) if employee_number else False,
             "name": name or _("Empleado OrangeHRM %s") % (employee_id or employee_number or ""),
             "orangehrm_job_title": job_title or False,
             "orangehrm_employment_status": employment_status or False,
+            "orangehrm_termination_id": str(termination_id) if termination_id else False,
             "work_email": self._get_nested_value(
                 employee_data,
                 ["workEmail", "work_email", "email", "empWorkEmail"],
@@ -209,8 +228,15 @@ class OrangeHrmDriverSyncConfig(models.Model):
                 employee_data,
                 ["identificationId", "identification_id", "nationalId", "otherId", "ssnNumber"],
             ),
-            "driver_type": self._infer_driver_type(job_title),
         }
+
+    def _classify_role(self, values):
+        job_title = self._normalize_text(values.get("orangehrm_job_title"))
+        if job_title and job_title in self._title_set("driver_job_titles"):
+            return "fleet_driver"
+        if job_title and job_title in self._title_set("salesperson_job_titles"):
+            return "salesperson"
+        return "employee"
 
     def _infer_driver_type(self, job_title):
         normalized = self._normalize_text(job_title)
@@ -245,7 +271,7 @@ class OrangeHrmDriverSyncConfig(models.Model):
                 return employee
         return Employee.browse()
 
-    def _prepare_employee_write_values(self, values):
+    def _prepare_employee_write_values(self, values, role):
         Employee = self.env["hr.employee"]
         allowed_values = {
             key: value
@@ -254,11 +280,14 @@ class OrangeHrmDriverSyncConfig(models.Model):
         }
         allowed_values.update(
             {
-                "is_fleet_driver": True,
+                "orangehrm_sync_role": role,
+                "is_fleet_driver": role == "fleet_driver",
+                "is_orangehrm_salesperson": role == "salesperson",
+                "driver_type": self._infer_driver_type(values.get("orangehrm_job_title")) if role == "fleet_driver" else "no_definido",
                 "orangehrm_last_sync_at": fields.Datetime.now(),
             }
         )
-        return allowed_values
+        return {key: value for key, value in allowed_values.items() if key in Employee._fields}
 
     def _ensure_work_contact(self, employee, values):
         if "work_contact_id" not in employee._fields:
@@ -276,11 +305,13 @@ class OrangeHrmDriverSyncConfig(models.Model):
         partner = self.env["res.partner"].sudo().create(partner_values or {"name": employee.name})
         employee.sudo().write({"work_contact_id": partner.id})
 
-    def _sync_drivers(self):
+    def _sync_users(self):
         self.ensure_one()
         counters = {
             "total_read": 0,
-            "total_drivers": 0,
+            "total_employees": 0,
+            "total_fleet_drivers": 0,
+            "total_salespersons": 0,
             "total_created": 0,
             "total_updated": 0,
             "total_skipped": 0,
@@ -289,9 +320,6 @@ class OrangeHrmDriverSyncConfig(models.Model):
         messages = []
         state = "success"
         try:
-            allowed_titles = self._allowed_job_titles()
-            if not allowed_titles:
-                raise UserError(_("Configure al menos un cargo de chofer."))
             employees_data = self._fetch_employees()
             counters["total_read"] = len(employees_data)
             for employee_data in employees_data:
@@ -300,12 +328,16 @@ class OrangeHrmDriverSyncConfig(models.Model):
                         counters["total_skipped"] += 1
                         continue
                     values = self._extract_employee_values(employee_data)
-                    if self._normalize_text(values.get("orangehrm_job_title")) not in allowed_titles:
+                    if values.get("orangehrm_termination_id") and not self.sync_terminated:
                         counters["total_skipped"] += 1
                         continue
-                    counters["total_drivers"] += 1
+                    if not values.get("orangehrm_employee_id") and not values.get("orangehrm_employee_number"):
+                        counters["total_skipped"] += 1
+                        messages.append(_("Empleado omitido porque no vino empNumber ni employeeId."))
+                        continue
+                    role = self._classify_role(values)
                     employee = self._find_employee(values)
-                    write_values = self._prepare_employee_write_values(values)
+                    write_values = self._prepare_employee_write_values(values, role)
                     if employee:
                         employee.write(write_values)
                         counters["total_updated"] += 1
@@ -313,6 +345,11 @@ class OrangeHrmDriverSyncConfig(models.Model):
                         employee = self.env["hr.employee"].sudo().create(write_values)
                         counters["total_created"] += 1
                     self._ensure_work_contact(employee, values)
+                    counters["total_employees"] += 1
+                    if role == "fleet_driver":
+                        counters["total_fleet_drivers"] += 1
+                    elif role == "salesperson":
+                        counters["total_salespersons"] += 1
                 except Exception as error:
                     counters["error_count"] += 1
                     counters["total_skipped"] += 1
@@ -326,7 +363,7 @@ class OrangeHrmDriverSyncConfig(models.Model):
             _logger.exception("Error en sincronizacion OrangeHRM")
 
         message = self._build_sync_message(counters, messages)
-        log = self.env["orangehrm.driver.sync.log"].sudo().create(
+        log = self.env["orangehrm.user.sync.log"].sudo().create(
             {
                 "name": _("Sincronizacion OrangeHRM %s") % fields.Datetime.now(),
                 "state": state,
@@ -345,7 +382,8 @@ class OrangeHrmDriverSyncConfig(models.Model):
 
     def _build_sync_message(self, counters, messages):
         summary = _(
-            "Consultados: %(total_read)s, choferes: %(total_drivers)s, creados: "
+            "Consultados: %(total_read)s, empleados: %(total_employees)s, choferes: "
+            "%(total_fleet_drivers)s, vendedores: %(total_salespersons)s, creados: "
             "%(total_created)s, actualizados: %(total_updated)s, omitidos: "
             "%(total_skipped)s, errores: %(error_count)s."
         ) % counters
@@ -357,4 +395,4 @@ class OrangeHrmDriverSyncConfig(models.Model):
     def cron_sync_active_configs(self):
         configs = self.search([("active", "=", True), ("frequency", "=", "daily")])
         for config in configs:
-            config._sync_drivers()
+            config._sync_users()
