@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="fleet_vehicle_view_form_inherit_orangehrm_driver_domain" model="ir.ui.view">
+        <field name="name">fleet.vehicle.form.orangehrm.driver.domain</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='driver_id']" position="attributes">
+                <!-- Keep the current driver selectable so existing vehicles with legacy drivers still open cleanly. -->
+                <attribute name="domain">['|', ('id', '=', driver_id), ('is_orangehrm_fleet_driver_contact', '=', True)]</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
