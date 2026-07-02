@@ -36,6 +36,8 @@
                             <field name="active"/>
                             <field name="orangehrm_base_url" placeholder="http://10.10.10.28/orangehrm"/>
                             <field name="orangehrm_employee_endpoint"/>
+                            <field name="orangehrm_job_title_endpoint"/>
+                            <field name="orangehrm_subunit_endpoint"/>
                             <field name="timeout"/>
                             <field name="frequency"/>
                             <field name="sync_terminated"/>
@@ -78,22 +80,37 @@
     </record>
 
     <menuitem id="menu_orangehrm_user_sync_root"
-              name="OrangeHRM Sync"
-              parent="fleet.fleet_configuration"
-              sequence="90"
-              groups="fleet.fleet_group_manager,base.group_system"/>
+              name="OrangeHRM"
+              parent="hr.menu_hr_root"
+              sequence="98"
+              groups="hr.group_hr_manager,base.group_system"/>
 
     <menuitem id="menu_orangehrm_user_sync_config"
               name="Configuracion"
               parent="menu_orangehrm_user_sync_root"
               action="action_orangehrm_user_sync_config"
               sequence="10"
-              groups="fleet.fleet_group_manager,base.group_system"/>
+              groups="hr.group_hr_manager,base.group_system"/>
 
     <menuitem id="menu_orangehrm_user_sync_log"
               name="Historial"
               parent="menu_orangehrm_user_sync_root"
               action="action_orangehrm_user_sync_log"
               sequence="20"
-              groups="fleet.fleet_group_manager,base.group_system"/>
+              groups="hr.group_hr_manager,base.group_system"/>
+
+
+    <menuitem id="menu_orangehrm_user_sync_departments"
+              name="Departamentos"
+              parent="menu_orangehrm_user_sync_root"
+              action="hr.hr_department_tree_action"
+              sequence="30"
+              groups="hr.group_hr_manager,base.group_system"/>
+
+    <menuitem id="menu_orangehrm_user_sync_jobs"
+              name="Puestos de trabajo"
+              parent="menu_orangehrm_user_sync_root"
+              action="hr.action_hr_job"
+              sequence="40"
+              groups="hr.group_hr_manager,base.group_system"/>
 </odoo>

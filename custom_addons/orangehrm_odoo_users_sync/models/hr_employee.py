@@ -1,4 +1,4 @@
-from odoo import fields, models
+﻿from odoo import fields, models
 
 
 class HrEmployee(models.Model):
@@ -14,8 +14,22 @@ class HrEmployee(models.Model):
         index=True,
         copy=False,
     )
+    orangehrm_job_title_id = fields.Integer(
+        string="ID cargo OrangeHRM",
+        index=True,
+        copy=False,
+    )
     orangehrm_job_title = fields.Char(
         string="Cargo OrangeHRM",
+        copy=False,
+    )
+    orangehrm_subunit_id = fields.Integer(
+        string="ID departamento OrangeHRM",
+        index=True,
+        copy=False,
+    )
+    orangehrm_subunit_name = fields.Char(
+        string="Departamento OrangeHRM",
         copy=False,
     )
     orangehrm_employment_status = fields.Char(
@@ -62,3 +76,7 @@ class HrEmployee(models.Model):
         default="no_definido",
         copy=False,
     )
+
+
+
+

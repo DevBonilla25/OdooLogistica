@@ -1,6 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_orangehrm_user_sync_config_manager,orangehrm.user.sync.config.manager,model_orangehrm_user_sync_config,fleet.fleet_group_manager,1,1,1,1
+access_orangehrm_user_sync_config_manager,orangehrm.user.sync.config.manager,model_orangehrm_user_sync_config,hr.group_hr_manager,1,1,1,1
 access_orangehrm_user_sync_config_system,orangehrm.user.sync.config.system,model_orangehrm_user_sync_config,base.group_system,1,1,1,1
-access_orangehrm_user_sync_log_user,orangehrm.user.sync.log.user,model_orangehrm_user_sync_log,fleet.fleet_group_user,1,0,0,0
-access_orangehrm_user_sync_log_manager,orangehrm.user.sync.log.manager,model_orangehrm_user_sync_log,fleet.fleet_group_manager,1,1,1,0
+access_orangehrm_user_sync_log_user,orangehrm.user.sync.log.user,model_orangehrm_user_sync_log,hr.group_hr_user,1,0,0,0
+access_orangehrm_user_sync_log_manager,orangehrm.user.sync.log.manager,model_orangehrm_user_sync_log,hr.group_hr_manager,1,1,1,0
 access_orangehrm_user_sync_log_system,orangehrm.user.sync.log.system,model_orangehrm_user_sync_log,base.group_system,1,1,1,1

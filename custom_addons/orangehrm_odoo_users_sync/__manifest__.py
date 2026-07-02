@@ -13,6 +13,7 @@
         "security/ir.model.access.csv",
         "data/ir_cron_data.xml",
         "views/hr_employee_views.xml",
+        "views/orangehrm_hr_catalog_views.xml",
         "views/orangehrm_user_sync_log_views.xml",
         "views/orangehrm_user_sync_config_views.xml",
     ],

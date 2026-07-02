@@ -1,4 +1,6 @@
 import logging
+from collections import Counter
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
 
@@ -31,7 +33,17 @@ class OrangeHrmUserSyncConfig(models.Model):
     orangehrm_employee_endpoint = fields.Char(
         string="Endpoint empleados",
         required=True,
-        default="/web/index.php/api/v2/pim/employees",
+        default="/web/index.php/api/v2/pim/employees?limit=50&offset=0&model=detailed&includeEmployees=onlyCurrent&sortField=employee.firstName&sortOrder=ASC",
+    )
+    orangehrm_job_title_endpoint = fields.Char(
+        string="Endpoint puestos",
+        required=True,
+        default=lambda self: self.env["orangehrm.api"].JOB_TITLES_ENDPOINT,
+    )
+    orangehrm_subunit_endpoint = fields.Char(
+        string="Endpoint departamentos",
+        required=True,
+        default=lambda self: self.env["orangehrm.api"].SUBUNITS_ENDPOINT,
     )
     auth_type = fields.Selection(
         [
@@ -111,7 +123,11 @@ class OrangeHrmUserSyncConfig(models.Model):
 
     @classmethod
     def _normalize_text(cls, value):
-        return (value or "").strip().casefold()
+        if value in (None, False):
+            return ""
+        if isinstance(value, (dict, list, tuple, set)):
+            return ""
+        return str(value).strip().casefold()
 
     def _title_set(self, field_name):
         self.ensure_one()
@@ -127,10 +143,25 @@ class OrangeHrmUserSyncConfig(models.Model):
             raise UserError(_("Configure la URL base de OrangeHRM."))
         if not self.orangehrm_employee_endpoint:
             raise UserError(_("Configure el endpoint de empleados de OrangeHRM."))
-        return "%s/%s" % (
-            self.orangehrm_base_url.rstrip("/"),
+        base_url = self.orangehrm_base_url.strip()
+        if not base_url.startswith(("http://", "https://")):
+            base_url = "http://%s" % base_url
+        url = "%s/%s" % (
+            base_url.rstrip("/"),
             self.orangehrm_employee_endpoint.lstrip("/"),
         )
+        return self._url_with_default_query(url)
+
+    def _url_with_default_query(self, url):
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        query.setdefault("limit", ["50"])
+        query.setdefault("offset", ["0"])
+        query.setdefault("model", ["detailed"])
+        query.setdefault("includeEmployees", ["onlyCurrent"])
+        query.setdefault("sortField", ["employee.firstName"])
+        query.setdefault("sortOrder", ["ASC"])
+        return urlunparse(parsed._replace(query=urlencode(query, doseq=True)))
 
     def _request_kwargs(self):
         self.ensure_one()
@@ -149,10 +180,25 @@ class OrangeHrmUserSyncConfig(models.Model):
             headers["Cookie"] = self.password
         return kwargs
 
+    def _api(self):
+        return self.env["orangehrm.api"]
+
     def _fetch_employees(self):
         self.ensure_one()
+        return self._api().request_paginated(self, self.orangehrm_employee_endpoint)
+
+    def _fetch_job_titles(self):
+        self.ensure_one()
+        return self._api().request_paginated(self, self.orangehrm_job_title_endpoint)
+
+    def _fetch_subunits(self):
+        self.ensure_one()
+        payload = self._api().request_json(self, self.orangehrm_subunit_endpoint)
+        return self._api().flatten_tree(self._api().extract_data_list(payload))
+
+    def _request_json(self, url):
         try:
-            response = requests.get(self._build_url(), **self._request_kwargs())
+            response = requests.get(url, **self._request_kwargs())
             response.raise_for_status()
         except requests.exceptions.HTTPError as error:
             if error.response is not None and error.response.status_code == 401:
@@ -160,7 +206,9 @@ class OrangeHrmUserSyncConfig(models.Model):
                     _("OrangeHRM rechazo la consulta con 401 Unauthorized. Revise el tipo de autenticacion, token, usuario/contrasena o cookie de sesion configurada.")
                 ) from error
             raise
-        payload = response.json()
+        return response.json()
+
+    def _extract_employee_list(self, payload):
         if isinstance(payload, list):
             return payload
         if isinstance(payload, dict):
@@ -173,6 +221,22 @@ class OrangeHrmUserSyncConfig(models.Model):
                 return payload["employees"]
         raise UserError(_("OrangeHRM devolvio un JSON sin lista de empleados reconocible."))
 
+    def _get_query_int(self, url, key):
+        values = parse_qs(urlparse(url).query).get(key)
+        if not values:
+            return False
+        try:
+            return int(values[0])
+        except (TypeError, ValueError):
+            return False
+
+    def _url_with_query(self, url, limit, offset):
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        query["limit"] = [str(limit)]
+        query["offset"] = [str(offset)]
+        return urlunparse(parsed._replace(query=urlencode(query, doseq=True)))
+
     def _get_nested_value(self, values, paths):
         for path in paths:
             current = values
@@ -182,6 +246,8 @@ class OrangeHrmUserSyncConfig(models.Model):
                     break
                 current = current.get(key)
             if current not in (None, "", False):
+                if isinstance(current, (dict, list, tuple, set)):
+                    continue
                 return current
         return False
 
@@ -200,20 +266,26 @@ class OrangeHrmUserSyncConfig(models.Model):
         full_name = self._get_nested_value(employee_data, ["name", "fullName", "full_name"])
         name_parts = [first_name, middle_name, last_name]
         name = full_name or " ".join(part.strip() for part in name_parts if part)
+        job_title_id = self._get_nested_value(employee_data, ["jobTitle.id", "job_title_id"])
+        subunit_id = self._get_nested_value(employee_data, ["subunit.id", "subunit_id"])
+        subunit_name = self._get_nested_value(employee_data, ["subunit.name", "subunit_name"])
         job_title = self._get_nested_value(
             employee_data,
             ["jobTitle.title", "jobTitle.name", "job_title", "jobTitle", "jobSpecification.title"],
         )
         employment_status = self._get_nested_value(
             employee_data,
-            ["employmentStatus.name", "employmentStatus.title", "employment_status", "employeeStatus"],
+            ["empStatus.name", "employmentStatus.name", "employmentStatus.title", "employment_status", "employeeStatus"],
         )
         termination_id = self._get_nested_value(employee_data, ["terminationId", "termination_id"])
         return {
             "orangehrm_employee_id": str(employee_id) if employee_id else False,
             "orangehrm_employee_number": str(employee_number) if employee_number else False,
             "name": name or _("Empleado OrangeHRM %s") % (employee_id or employee_number or ""),
+            "orangehrm_job_title_id": job_title_id or False,
             "orangehrm_job_title": job_title or False,
+            "orangehrm_subunit_id": subunit_id or False,
+            "orangehrm_subunit_name": subunit_name or False,
             "orangehrm_employment_status": employment_status or False,
             "orangehrm_termination_id": str(termination_id) if termination_id else False,
             "work_email": self._get_nested_value(
@@ -230,11 +302,15 @@ class OrangeHrmUserSyncConfig(models.Model):
             ),
         }
 
+    def _title_matches(self, job_title, field_name):
+        titles = self._title_set(field_name)
+        return any(title == job_title or title in job_title for title in titles)
+
     def _classify_role(self, values):
         job_title = self._normalize_text(values.get("orangehrm_job_title"))
-        if job_title and job_title in self._title_set("driver_job_titles"):
+        if job_title and self._title_matches(job_title, "driver_job_titles"):
             return "fleet_driver"
-        if job_title and job_title in self._title_set("salesperson_job_titles"):
+        if job_title and self._title_matches(job_title, "salesperson_job_titles"):
             return "salesperson"
         return "employee"
 
@@ -271,8 +347,76 @@ class OrangeHrmUserSyncConfig(models.Model):
                 return employee
         return Employee.browse()
 
+    def _sync_departments(self):
+        departments_data = self._fetch_subunits()
+        Department = self.env["hr.department"].sudo()
+        by_orangehrm_id = {}
+        for department_data in departments_data:
+            orangehrm_id = department_data.get("id")
+            name = department_data.get("name")
+            if not orangehrm_id or not name:
+                continue
+            parent = by_orangehrm_id.get(department_data.get("parent_orangehrm_id"))
+            department = Department.search([("orangehrm_subunit_id", "=", int(orangehrm_id))], limit=1)
+            if not department:
+                department = Department.search([("name", "=", name), ("parent_id", "=", parent.id if parent else False)], limit=1)
+            values = {
+                "name": name,
+                "parent_id": parent.id if parent else False,
+            }
+            if "orangehrm_subunit_id" in Department._fields:
+                values["orangehrm_subunit_id"] = int(orangehrm_id)
+            if "orangehrm_unit_id" in Department._fields:
+                values["orangehrm_unit_id"] = department_data.get("unitId") or False
+            if "orangehrm_level" in Department._fields:
+                values["orangehrm_level"] = department_data.get("level") or 0
+            if department:
+                department.write(values)
+            else:
+                department = Department.create(values)
+            by_orangehrm_id[orangehrm_id] = department
+        return by_orangehrm_id
+
+    def _sync_job_titles(self):
+        job_titles = self._fetch_job_titles()
+        for job_title in job_titles:
+            self._ensure_hr_job(
+                {
+                    "orangehrm_job_title_id": job_title.get("id"),
+                    "orangehrm_job_title": job_title.get("title"),
+                    "orangehrm_job_description": job_title.get("description"),
+                }
+            )
+        return job_titles
+
+    def _ensure_hr_job(self, values):
+        job_title = values.get("orangehrm_job_title")
+        if not job_title:
+            return False
+        Job = self.env["hr.job"].sudo()
+        job_title_id = values.get("orangehrm_job_title_id")
+        job = Job.browse()
+        if job_title_id and "orangehrm_job_title_id" in Job._fields:
+            job = Job.search([("orangehrm_job_title_id", "=", int(job_title_id))], limit=1)
+        if not job:
+            job = Job.search([("name", "=", job_title)], limit=1)
+        job_values = {"name": job_title}
+        if job_title_id and "orangehrm_job_title_id" in Job._fields:
+            job_values["orangehrm_job_title_id"] = int(job_title_id)
+        if values.get("orangehrm_job_description") and "orangehrm_job_description" in Job._fields:
+            job_values["orangehrm_job_description"] = values["orangehrm_job_description"]
+        if values.get("orangehrm_job_description") and "description" in Job._fields:
+            job_values["description"] = values["orangehrm_job_description"]
+        if job:
+            job.write(job_values)
+        else:
+            job = Job.create(job_values)
+        return job
+
     def _prepare_employee_write_values(self, values, role):
         Employee = self.env["hr.employee"]
+        job = self._ensure_hr_job(values)
+        department = self._find_department(values)
         allowed_values = {
             key: value
             for key, value in values.items()
@@ -285,9 +429,24 @@ class OrangeHrmUserSyncConfig(models.Model):
                 "is_orangehrm_salesperson": role == "salesperson",
                 "driver_type": self._infer_driver_type(values.get("orangehrm_job_title")) if role == "fleet_driver" else "no_definido",
                 "orangehrm_last_sync_at": fields.Datetime.now(),
+                "job_id": job.id if job and "job_id" in Employee._fields else False,
+                "department_id": department.id if department and "department_id" in Employee._fields else False,
             }
         )
         return {key: value for key, value in allowed_values.items() if key in Employee._fields}
+
+    def _find_department(self, values):
+        Department = self.env["hr.department"].sudo()
+        subunit_id = values.get("orangehrm_subunit_id")
+        if subunit_id and "orangehrm_subunit_id" in Department._fields:
+            department = Department.search([("orangehrm_subunit_id", "=", int(subunit_id))], limit=1)
+            if department:
+                return department
+        if values.get("orangehrm_subunit_name"):
+            department = Department.search([("name", "=", values["orangehrm_subunit_name"])], limit=1)
+            if department:
+                return department
+        return Department.browse()
 
     def _ensure_work_contact(self, employee, values):
         if "work_contact_id" not in employee._fields:
@@ -320,6 +479,8 @@ class OrangeHrmUserSyncConfig(models.Model):
         messages = []
         state = "success"
         try:
+            self._sync_departments()
+            self._sync_job_titles()
             employees_data = self._fetch_employees()
             counters["total_read"] = len(employees_data)
             for employee_data in employees_data:
@@ -359,6 +520,7 @@ class OrangeHrmUserSyncConfig(models.Model):
                 state = "warning"
         except Exception as error:
             state = "error"
+            counters["error_count"] += 1
             messages.append(str(error))
             _logger.exception("Error en sincronizacion OrangeHRM")
 
@@ -388,7 +550,15 @@ class OrangeHrmUserSyncConfig(models.Model):
             "%(total_skipped)s, errores: %(error_count)s."
         ) % counters
         if messages:
-            return "%s\n%s" % (summary, "\n".join(messages[:10]))
+            grouped_messages = Counter(str(message) for message in messages)
+            detail = "\n".join(
+                "%s%s" % (
+                    message,
+                    " (x%s)" % count if count > 1 else "",
+                )
+                for message, count in grouped_messages.most_common(10)
+            )
+            return "%s\n\nErrores:\n%s" % (summary, detail)
         return summary
 
     @api.model
