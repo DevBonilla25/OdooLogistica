@@ -1,6 +1,8 @@
 # Filtro de choferes OrangeHRM en Flota
 
-Modulo puente para Odoo 19 Community que limita el campo Conductor de Flota a contactos vinculados con empleados sincronizados desde OrangeHRM y marcados como choferes.
+Modulo puente para Odoo 19 Community que permite controlar que contactos aparecen en el campo Conductor de Flota.
+
+Por defecto limita el campo Conductor a contactos vinculados con empleados sincronizados desde OrangeHRM y marcados como choferes. Si el usuario activa la opcion `Ver todos los empleados/usuarios`, el selector permite buscar cualquier contacto vinculado a un empleado o usuario interno.
 
 El modulo no modifica el core de Odoo ni mezcla la logica de OrangeHRM con las ordenes de mantenimiento. Su objetivo es conectar de forma controlada:
 
@@ -13,7 +15,7 @@ El modulo no modifica el core de Odoo ni mezcla la logica de OrangeHRM con las o
 
 En Flota, el campo Conductor de `fleet.vehicle` usa contactos de Odoo (`res.partner`). Sin un filtro adicional, Odoo puede mostrar muchos contactos que no son choferes operativos.
 
-Este modulo hace que el campo Conductor sugiera solamente contactos laborales vinculados a empleados con:
+Este modulo hace que el campo Conductor sugiera, por defecto, solamente contactos laborales vinculados a empleados con:
 
 ```text
 is_fleet_driver = True
@@ -58,6 +60,21 @@ hr.employee.work_contact_id
 
 `is_orangehrm_fleet_driver_contact` queda en `True` cuando al menos un empleado vinculado al contacto tiene `is_fleet_driver = True`.
 
+El modulo tambien agrega en `fleet.vehicle`:
+
+```text
+show_all_employee_driver_contacts
+allowed_driver_partner_ids
+```
+
+`show_all_employee_driver_contacts` es el check visible en el formulario del vehiculo.
+
+`allowed_driver_partner_ids` es una lista calculada de contactos permitidos para el campo Conductor:
+
+- Si el check esta desactivado, incluye contactos de choferes OrangeHRM.
+- Si el check esta activado, incluye contactos vinculados a empleados o usuarios.
+- En ambos casos incluye el conductor actualmente asignado para no romper vehiculos existentes.
+
 ## Domain aplicado
 
 El modulo hereda la vista formulario de vehiculos:
@@ -75,18 +92,22 @@ driver_id
 con el siguiente domain:
 
 ```python
-['|', ('id', '=', driver_id), ('is_orangehrm_fleet_driver_contact', '=', True)]
+[('id', 'in', allowed_driver_partner_ids)]
 ```
 
-Esto permite dos comportamientos importantes:
+La lista `allowed_driver_partner_ids` se calcula dinamicamente segun el check `Ver todos los empleados/usuarios`.
+
+Esto permite tres comportamientos importantes:
 
 - Al buscar o seleccionar un nuevo conductor, se sugieren solo contactos vinculados a choferes de OrangeHRM.
+- Si se activa `Ver todos los empleados/usuarios`, se pueden buscar contactos vinculados a empleados o usuarios internos.
 - Si un vehiculo existente ya tiene asignado un conductor que no cumple el filtro, el formulario sigue abriendo y mostrando ese valor sin error.
 
 ## Archivos principales
 
 ```text
 __manifest__.py
+models/fleet_vehicle.py
 models/res_partner.py
 views/fleet_vehicle_views.xml
 ```
@@ -119,14 +140,17 @@ python odoo-bin -c tu_config.conf -d tu_base -u fleet_driver_filter_orangehrm --
 4. Abrir Flota > Vehiculos.
 5. Crear o editar un vehiculo.
 6. Abrir el campo Conductor.
-7. Confirmar que solo aparecen contactos vinculados a choferes de OrangeHRM.
-8. Confirmar que contactos de empleados no choferes ya no aparecen en la busqueda.
-9. Abrir un vehiculo existente con conductor previamente asignado.
-10. Confirmar que el formulario abre sin error aunque ese conductor no cumpla el filtro.
+7. Confirmar que, con el check desactivado, solo aparecen contactos vinculados a choferes de OrangeHRM.
+8. Confirmar que contactos de empleados no choferes no aparecen en la busqueda.
+9. Activar `Ver todos los empleados/usuarios`.
+10. Abrir nuevamente el campo Conductor.
+11. Confirmar que aparecen contactos vinculados a empleados o usuarios internos.
+12. Abrir un vehiculo existente con conductor previamente asignado.
+13. Confirmar que el formulario abre sin error aunque ese conductor no cumpla el filtro activo.
 
 ## Alcance
 
-Este modulo solo filtra la seleccion del conductor en el formulario de vehiculos.
+Este modulo solo controla la seleccion del conductor en el formulario de vehiculos.
 
 No modifica:
 

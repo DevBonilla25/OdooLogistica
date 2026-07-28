@@ -6,8 +6,14 @@
         <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='driver_id']" position="attributes">
-                <!-- Keep the current driver selectable so existing vehicles with legacy drivers still open cleanly. -->
-                <attribute name="domain">['|', ('id', '=', driver_id), ('is_orangehrm_fleet_driver_contact', '=', True)]</attribute>
+                <attribute name="domain">[('id', 'in', allowed_driver_partner_ids)]</attribute>
+            </xpath>
+            <xpath expr="//field[@name='driver_id']" position="before">
+                <field name="allowed_driver_partner_ids" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='driver_id']" position="after">
+                <!-- Activar este check cambia el selector de solo choferes a todos los responsables internos. -->
+                <field name="show_all_employee_driver_contacts"/>
             </xpath>
         </field>
     </record>
