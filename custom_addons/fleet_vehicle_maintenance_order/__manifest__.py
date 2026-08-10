@@ -6,8 +6,7 @@
     "depends": [
         "fleet",
         "product",
-        "stock",
-        "purchase",
+        "purchase_stock",
         "mail",
     ],
     "data": [
@@ -15,6 +14,7 @@
         "data/fleet_vehicle_system_data.xml",
         "data/ir_sequence_data.xml",
         "views/fleet_vehicle_maintenance_order_views.xml",
+        "views/maintenance_cost_report_views.xml",
         "views/purchase_order_views.xml",
         "views/fleet_vehicle_views.xml",
     ],

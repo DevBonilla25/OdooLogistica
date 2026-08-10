@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_fleet_vehicle_maintenance_cost_report_list" model="ir.ui.view">
+        <field name="name">fleet.vehicle.maintenance.cost.report.list</field>
+        <field name="model">fleet.vehicle.maintenance.cost.report</field>
+        <field name="arch" type="xml">
+            <list string="Costos de flota" create="0" edit="0" delete="0">
+                <field name="request_date"/>
+                <field name="vehicle_id"/>
+                <field name="driver_id" optional="hide"/>
+                <field name="cost_type"/>
+                <field name="component_name"/>
+                <field name="order_id" optional="show"/>
+                <field name="system_id" optional="show"/>
+                <field name="product_id" optional="show"/>
+                <field name="technician_id" optional="hide"/>
+                <field name="quantity" optional="hide"/>
+                <field name="cost" sum="Costo total"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="state" widget="badge" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_fleet_vehicle_maintenance_cost_report_search" model="ir.ui.view">
+        <field name="name">fleet.vehicle.maintenance.cost.report.search</field>
+        <field name="model">fleet.vehicle.maintenance.cost.report</field>
+        <field name="arch" type="xml">
+            <search string="Buscar costos de flota">
+                <field name="vehicle_id"/>
+                <field name="driver_id"/>
+                <field name="order_id"/>
+                <field name="system_id"/>
+                <field name="component_name"/>
+                <field name="product_id"/>
+                <field name="technician_id"/>
+                <filter string="Contratos" name="contracts" domain="[('cost_type', '=', 'contract')]"/>
+                <filter string="Servicios" name="services" domain="[('cost_type', '=', 'service')]"/>
+                <filter string="Combustible" name="fuel" domain="[('cost_type', '=', 'fuel')]"/>
+                <filter string="Mantenimiento" name="maintenance" domain="[('cost_type', 'in', ('activity', 'part', 'labor'))]"/>
+                <filter string="Repuestos" name="parts" domain="[('cost_type', '=', 'part')]"/>
+                <filter string="Mano de obra" name="labor" domain="[('cost_type', '=', 'labor')]"/>
+                <separator/>
+                <filter name="filter_date_start" date="request_date" default_period="year"/>
+                <group>
+                    <filter string="Vehiculo" name="group_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                    <filter string="Conductor" name="group_driver" context="{'group_by': 'driver_id'}"/>
+                    <filter string="Tipo de costo" name="group_cost_type" context="{'group_by': 'cost_type'}"/>
+                    <filter string="Orden" name="group_order" context="{'group_by': 'order_id'}"/>
+                    <filter string="Sistema" name="group_system" context="{'group_by': 'system_id'}"/>
+                    <filter string="Repuesto" name="group_product" context="{'group_by': 'product_id'}"/>
+                    <filter string="Tecnico" name="group_technician" context="{'group_by': 'technician_id'}"/>
+                    <filter string="Estado" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Mes" name="group_month" context="{'group_by': 'request_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_fleet_vehicle_maintenance_cost_report_pivot" model="ir.ui.view">
+        <field name="name">fleet.vehicle.maintenance.cost.report.pivot</field>
+        <field name="model">fleet.vehicle.maintenance.cost.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Costos de flota">
+                <field name="request_date" type="col" interval="year"/>
+                <field name="cost_type" type="col"/>
+                <field name="vehicle_id" type="row"/>
+                <field name="cost" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_fleet_vehicle_maintenance_cost_report_graph" model="ir.ui.view">
+        <field name="name">fleet.vehicle.maintenance.cost.report.graph</field>
+        <field name="model">fleet.vehicle.maintenance.cost.report</field>
+        <field name="arch" type="xml">
+            <graph string="Costos de flota" type="bar">
+                <field name="request_date" interval="month"/>
+                <field name="cost_type"/>
+                <field name="cost" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="fleet.fleet_costs_reporting_action" model="ir.actions.act_window">
+        <field name="res_model">fleet.vehicle.maintenance.cost.report</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" eval="False"/>
+        <field name="search_view_id" ref="view_fleet_vehicle_maintenance_cost_report_search"/>
+        <field name="context">{'search_default_filter_date_start': 1}</field>
+    </record>
+</odoo>
