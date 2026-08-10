@@ -54,3 +54,16 @@ class PurchaseOrderLine(models.Model):
         store=True,
         readonly=True,
     )
+
+    def _prepare_stock_moves(self, picking):
+        values_list = super()._prepare_stock_moves(picking)
+        if not self.fleet_maintenance_part_line_id:
+            return values_list
+        maintenance_values = {
+            "fleet_maintenance_order_id": self.fleet_maintenance_order_id.id,
+            "fleet_maintenance_part_line_id": self.fleet_maintenance_part_line_id.id,
+            "fleet_vehicle_id": self.fleet_vehicle_id.id,
+        }
+        for values in values_list:
+            values.update(maintenance_values)
+        return values_list

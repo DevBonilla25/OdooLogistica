@@ -278,6 +278,10 @@ class FleetVehicleMaintenanceOrder(models.Model):
         for order in self:
             order._consume_stock_parts()
 
+    def action_reserve_stock_parts(self):
+        for order in self:
+            order._reserve_stock_parts()
+
     def action_create_parts_rfq(self):
         for order in self:
             order._create_parts_rfq()
@@ -287,13 +291,13 @@ class FleetVehicleMaintenanceOrder(models.Model):
         if self.state not in ("approved", "execution", "parts_pending"):
             raise UserError(_("Solo puede consumir repuestos cuando la orden esta aprobada o en ejecucion."))
 
-        lines = self.part_line_ids.filtered(lambda line: line.consume_from_stock and not line.stock_move_id)
+        lines = self.part_line_ids.filtered(lambda line: line.stock_move_id.state == "assigned")
         if not lines:
-            raise UserError(_("No hay repuestos pendientes para consumir desde bodega."))
+            raise UserError(_("No hay repuestos reservados pendientes de consumo."))
 
-        created_moves = self.env["stock.move"]
+        consumed_moves = self.env["stock.move"]
         for line in lines:
-            created_moves |= line._create_stock_consumption_move()
+            consumed_moves |= line._consume_reserved_stock_move()
 
         body_lines = "".join(
             "<li>%s: %s %s</li>"
@@ -302,11 +306,38 @@ class FleetVehicleMaintenanceOrder(models.Model):
                 move.product_uom_qty,
                 move.product_uom.display_name,
             )
-            for move in created_moves
+            for move in consumed_moves
         )
         self.message_post(
             body=Markup("<p>%s</p><ul>%s</ul>")
             % (_("Repuestos consumidos desde bodega:"), Markup(body_lines))
+        )
+
+    def _reserve_stock_parts(self):
+        self.ensure_one()
+        if self.state not in ("approved", "execution", "parts_pending"):
+            raise UserError(_("Solo puede reservar repuestos cuando la orden esta aprobada o en ejecucion."))
+        lines = self.part_line_ids.filtered(
+            lambda line: not line.stock_move_id
+            and (line.source == "stock" or (line.source == "purchase" and line.purchase_state == "received"))
+        )
+        if not lines:
+            raise UserError(_("No hay repuestos disponibles pendientes de reserva."))
+
+        reserved_moves = self.env["stock.move"]
+        for line in lines:
+            reserved_moves |= line._create_stock_reservation_move()
+        body_lines = "".join(
+            "<li>%s: %s %s</li>" % (
+                move.product_id.display_name,
+                move.product_uom_qty,
+                move.product_uom.display_name,
+            )
+            for move in reserved_moves
+        )
+        self.message_post(
+            body=Markup("<p>%s</p><ul>%s</ul>")
+            % (_("Repuestos reservados en bodega:"), Markup(body_lines))
         )
 
     def _create_parts_rfq(self):
@@ -440,6 +471,11 @@ class FleetVehicleMaintenancePartLine(models.Model):
         compute="_compute_consumed",
         store=True,
     )
+    reserved = fields.Boolean(
+        string="Reservado",
+        compute="_compute_reserved",
+        store=True,
+    )
     suggested_vendor_id = fields.Many2one(
         "res.partner",
         string="Proveedor sugerido",
@@ -529,9 +565,12 @@ class FleetVehicleMaintenancePartLine(models.Model):
                 line.purchase_state = "pending_purchase"
             elif purchase_line.state == "cancel":
                 line.purchase_state = "cancelled"
-            elif purchase_line.state == "purchase" and purchase_line.qty_received >= purchase_line.product_qty:
+            elif (
+                purchase_line.state in ("purchase", "done")
+                and purchase_line.qty_received >= purchase_line.product_qty
+            ):
                 line.purchase_state = "received"
-            elif purchase_line.state == "purchase":
+            elif purchase_line.state in ("purchase", "done"):
                 line.purchase_state = "purchase_confirmed"
             else:
                 line.purchase_state = "rfq_created"
@@ -541,16 +580,39 @@ class FleetVehicleMaintenancePartLine(models.Model):
         for line in self:
             line.consumed = line.stock_move_id.state == "done"
 
+    @api.depends("stock_move_id", "stock_move_id.state")
+    def _compute_reserved(self):
+        for line in self:
+            line.reserved = line.stock_move_id.state == "assigned"
+
     @api.onchange("estimated_purchase_price")
     def _onchange_estimated_purchase_price(self):
         for line in self:
             if line.source == "purchase":
                 line.price_unit = line.estimated_purchase_price
 
-    @api.depends("quantity", "price_unit", "source", "purchase_qty", "estimated_purchase_price")
+    @api.depends(
+        "quantity",
+        "price_unit",
+        "source",
+        "purchase_qty",
+        "estimated_purchase_price",
+        "purchase_order_line_id.price_subtotal",
+        "purchase_order_line_id.order_id.currency_id",
+        "purchase_order_line_id.order_id.date_order",
+    )
     def _compute_subtotal(self):
         for line in self:
-            if line.source == "purchase":
+            purchase_line = line.purchase_order_line_id
+            if line.source == "purchase" and purchase_line:
+                purchase_order = purchase_line.order_id
+                line.subtotal = purchase_order.currency_id._convert(
+                    purchase_line.price_subtotal,
+                    line.currency_id,
+                    line.order_id.company_id,
+                    purchase_order.date_order,
+                )
+            elif line.source == "purchase":
                 line.subtotal = line.purchase_qty * line.estimated_purchase_price
             else:
                 line.subtotal = line.quantity * line.price_unit
@@ -582,10 +644,10 @@ class FleetVehicleMaintenancePartLine(models.Model):
             return warehouse.lot_stock_id
         return self.env.ref("stock.stock_location_stock", raise_if_not_found=False)
 
-    def _create_stock_consumption_move(self):
+    def _create_stock_reservation_move(self):
         self.ensure_one()
         if self.stock_move_id:
-            raise UserError(_("El repuesto %s ya fue consumido.") % self.name)
+            raise UserError(_("El repuesto %s ya tiene un movimiento de inventario.") % self.name)
         if not self.product_id:
             raise UserError(_("Seleccione un producto para consumir el repuesto %s.") % self.name)
         if self.product_id.type == "service":
@@ -619,7 +681,11 @@ class FleetVehicleMaintenancePartLine(models.Model):
         if not inventory_location:
             raise UserError(_("No se encontro ubicacion de consumo/perdida de inventario."))
 
-        unit_cost = self.product_id.standard_price
+        unit_cost = (
+            self.purchase_order_line_id._get_stock_move_price_unit()
+            if self.purchase_order_line_id
+            else self.product_id.standard_price
+        )
         move = self.env["stock.move"].create({
             "product_id": self.product_id.id,
             "description_picking": "%s - %s" % (self.order_id.name, self.name),
@@ -636,16 +702,29 @@ class FleetVehicleMaintenancePartLine(models.Model):
         })
         move._action_confirm()
         move._action_assign()
-        move.quantity = self.quantity
-        move.picked = True
-        move = move._action_done()
+        if move.state != "assigned":
+            raise UserError(_("No fue posible reservar todo el stock requerido para %s.") % self.product_id.display_name)
 
         self.write({
             "stock_move_id": move.id,
             "source_location_id": source_location.id,
-            "consumed_cost": unit_cost * product_qty,
         })
         return move
+
+    def _consume_reserved_stock_move(self):
+        self.ensure_one()
+        move = self.stock_move_id
+        if move.state != "assigned":
+            raise UserError(_("El repuesto %s no esta reservado y no puede consumirse.") % self.name)
+        product_qty = move.product_uom._compute_quantity(
+            move.product_uom_qty,
+            move.product_id.uom_id,
+        )
+        move.quantity = move.product_uom_qty
+        move.picked = True
+        done_move = move._action_done()
+        self.consumed_cost = move.price_unit * product_qty
+        return done_move
 
 
 class FleetVehicleMaintenanceLaborLine(models.Model):

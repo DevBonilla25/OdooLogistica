@@ -90,6 +90,7 @@
                     <button name="action_to_approval" string="Solicitar aprobacion" type="object" class="btn-primary" invisible="state != 'diagnosis'"/>
                     <button name="action_approve" string="Aprobar" type="object" class="btn-primary" invisible="state != 'approval'"/>
                     <button name="action_start_execution" string="Iniciar ejecucion" type="object" class="btn-primary" invisible="state not in ('approved', 'parts_pending')"/>
+                    <button name="action_reserve_stock_parts" string="Reservar repuestos" type="object" class="btn-primary" invisible="state not in ('approved', 'execution', 'parts_pending')"/>
                     <button name="action_consume_stock_parts" string="Consumir repuestos" type="object" class="btn-primary" invisible="state not in ('approved', 'execution', 'parts_pending')"/>
                     <button name="action_create_parts_rfq" string="Crear RFQ de repuestos" type="object" class="btn-primary" invisible="state not in ('approval', 'approved', 'execution', 'parts_pending')"/>
                     <button name="action_parts_pending" string="Pendiente de repuestos" type="object" invisible="state not in ('approved', 'execution')"/>
@@ -182,7 +183,8 @@
                                     <field name="purchase_order_line_id" readonly="1"/>
                                     <field name="price_unit" widget="monetary"/>
                                     <field name="subtotal" widget="monetary"/>
-                                    <field name="consumed"/>
+                                    <field name="reserved" readonly="1"/>
+                                    <field name="consumed" readonly="1"/>
                                     <field name="consumed_cost" widget="monetary"/>
                                     <field name="stock_move_id" readonly="1"/>
                                     <field name="currency_id" column_invisible="True"/>
