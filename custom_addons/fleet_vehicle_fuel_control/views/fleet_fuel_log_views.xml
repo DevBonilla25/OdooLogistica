@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="fleet_vehicle_log_fuel_form_control" model="ir.ui.view">
+        <field name="name">fleet.vehicle.log.fuel.form.control</field>
+        <field name="model">fleet.vehicle.log.fuel</field>
+        <field name="inherit_id" ref="fleet_vehicle_log_fuel.fleet_vehicle_log_fuel_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_submit_review"
+                        string="Enviar a revision"
+                        type="object"
+                        class="btn-primary"
+                        invisible="approval_state != 'draft'"/>
+                <button name="action_approve"
+                        string="Aprobar"
+                        type="object"
+                        class="btn-primary"
+                        groups="fleet.fleet_group_manager"
+                        invisible="approval_state != 'pending_review'"/>
+                <button name="action_reject"
+                        string="Rechazar"
+                        type="object"
+                        groups="fleet.fleet_group_manager"
+                        invisible="approval_state != 'pending_review'"/>
+                <button name="action_reset_to_draft"
+                        string="Volver a borrador"
+                        type="object"
+                        groups="fleet.fleet_group_manager"
+                        invisible="approval_state != 'rejected'"/>
+                <field name="approval_state"
+                       widget="statusbar"
+                       statusbar_visible="draft,pending_review,approved,rejected"/>
+            </xpath>
+
+            <xpath expr="//button[@name='button_running']" position="attributes">
+                <attribute name="invisible">state != 'todo' or approval_state != 'approved'</attribute>
+            </xpath>
+            <xpath expr="//button[@name='button_done']" position="attributes">
+                <attribute name="invisible">state != 'running' or approval_state != 'approved'</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='amount']" position="replace">
+                <field name="fuel_subtotal" widget="monetary" readonly="1"/>
+                <field name="fuel_tax_amount" widget="monetary" readonly="1"/>
+                <field name="fuel_total_cost" widget="monetary" readonly="1"/>
+            </xpath>
+            <xpath expr="//field[@name='vendor_id']" position="replace">
+                <field name="fuel_station_id"
+                       readonly="approval_state != 'draft'"/>
+                <field name="invoice_number"
+                       readonly="approval_state != 'draft'"/>
+            </xpath>
+            <xpath expr="//field[@name='liter']" position="replace">
+                <field name="gallons"
+                       readonly="approval_state != 'draft'"/>
+            </xpath>
+            <xpath expr="//field[@name='price_per_liter']" position="replace">
+                <field name="price_per_gallon"
+                       readonly="approval_state != 'draft'"/>
+            </xpath>
+            <xpath expr="//field[@name='odometer_id']" position="before">
+                <field name="previous_odometer" readonly="1"/>
+            </xpath>
+            <xpath expr="//label[@for='odometer']" position="replace">
+                <label for="current_odometer"/>
+            </xpath>
+            <xpath expr="//field[@name='odometer']" position="replace">
+                <field name="current_odometer"
+                       readonly="approval_state != 'draft'"/>
+            </xpath>
+            <xpath expr="//field[@name='notes']/.." position="before">
+                <group string="Rendimiento">
+                    <field name="distance_km" readonly="1"/>
+                    <field name="km_per_gallon" readonly="1"/>
+                    <field name="cost_per_km" readonly="1"/>
+                </group>
+                <group string="Migracion historica" invisible="not legacy_service_id">
+                    <field name="legacy_service_id" readonly="1" context="{'active_test': False}"/>
+                    <field name="legacy_total_cost" widget="monetary" readonly="1"/>
+                    <field name="migration_pending" readonly="1"/>
+                </group>
+                <group string="Factura">
+                    <field name="invoice_attachment_ids"
+                           widget="many2many_binary"
+                           readonly="approval_state != 'draft'"/>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='notes']/.." position="after">
+                <group string="Integracion"
+                       groups="fleet.fleet_group_manager">
+                    <field name="external_uuid" readonly="1"/>
+                    <field name="source_system"/>
+                    <field name="sync_status"/>
+                    <field name="synced_at"/>
+                    <field name="external_payload_json"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="fleet_vehicle_log_fuel_list_control" model="ir.ui.view">
+        <field name="name">fleet.vehicle.log.fuel.list.control</field>
+        <field name="model">fleet.vehicle.log.fuel</field>
+        <field name="inherit_id" ref="fleet_vehicle_log_fuel.fleet_vehicle_log_fuel_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='liter']" position="replace">
+                <field name="gallons" sum="Total galones"/>
+            </xpath>
+            <xpath expr="//field[@name='price_per_liter']" position="replace">
+                <field name="price_per_gallon" optional="hide"/>
+            </xpath>
+            <xpath expr="//field[@name='amount']" position="replace">
+                <field name="fuel_subtotal" widget="monetary" sum="Subtotal" optional="hide"/>
+                <field name="fuel_tax_amount" widget="monetary" sum="IVA 15%" optional="show"/>
+                <field name="fuel_total_cost" widget="monetary" sum="Costo total con IVA"/>
+            </xpath>
+            <xpath expr="//field[@name='vendor_id']" position="replace">
+                <field name="fuel_station_id" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='state']" position="before">
+                <field name="distance_km" optional="show"/>
+                <field name="km_per_gallon" optional="show"/>
+                <field name="cost_per_km" optional="show"/>
+                <field name="migration_pending" optional="show"/>
+                <field name="legacy_total_cost" widget="monetary" optional="hide"/>
+                <field name="approval_state"
+                       widget="badge"
+                       decoration-success="approval_state == 'approved'"
+                       decoration-warning="approval_state == 'pending_review'"
+                       decoration-danger="approval_state == 'rejected'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="fleet_vehicle_log_fuel_search_control" model="ir.ui.view">
+        <field name="name">fleet.vehicle.log.fuel.search.control</field>
+        <field name="model">fleet.vehicle.log.fuel</field>
+        <field name="inherit_id" ref="fleet_vehicle_log_fuel.fleet_vehicle_log_fuel_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='liter']" position="replace">
+                <field name="gallons"/>
+            </xpath>
+            <xpath expr="//field[@name='service_type_id']" position="after">
+                <field name="purchaser_id"/>
+                <field name="fuel_station_id"/>
+                <field name="approval_state"/>
+                <filter string="Fecha" name="fuel_date" date="date"/>
+                <filter string="Aprobados" name="approved" domain="[('approval_state', '=', 'approved')]"/>
+                <filter string="Pendientes" name="pending" domain="[('approval_state', '=', 'pending_review')]"/>
+                <filter string="Migraciones pendientes" name="migration_pending" domain="[('migration_pending', '=', True)]"/>
+                <separator/>
+                <filter string="Vehiculo" name="group_vehicle" context="{'group_by': 'vehicle_id'}"/>
+                <filter string="Mes" name="group_month" context="{'group_by': 'date:month'}"/>
+                <filter string="Estado" name="group_approval" context="{'group_by': 'approval_state'}"/>
+                <filter string="Gasolinera" name="group_station" context="{'group_by': 'fuel_station_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="fleet_vehicle_log_fuel_graph_control" model="ir.ui.view">
+        <field name="name">fleet.vehicle.log.fuel.graph.control</field>
+        <field name="model">fleet.vehicle.log.fuel</field>
+        <field name="inherit_id" ref="fleet_vehicle_log_fuel.fleet_vehicle_log_fuel_view_graph"/>
+        <field name="arch" type="xml">
+            <xpath expr="//graph" position="replace">
+                <graph string="Analisis de combustible" type="bar">
+                    <field name="date" interval="month"/>
+                    <field name="vehicle_id"/>
+                    <field name="fuel_subtotal" type="measure"/>
+                    <field name="fuel_tax_amount" type="measure"/>
+                    <field name="fuel_total_cost" type="measure"/>
+                    <field name="gallons" type="measure"/>
+                    <field name="km_per_gallon" type="measure"/>
+                    <field name="cost_per_km" type="measure"/>
+                </graph>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="fleet_vehicle_log_fuel_pivot_control" model="ir.ui.view">
+        <field name="name">fleet.vehicle.log.fuel.pivot.control</field>
+        <field name="model">fleet.vehicle.log.fuel</field>
+        <field name="arch" type="xml">
+            <pivot string="Analisis de combustible">
+                <field name="vehicle_id" type="row"/>
+                <field name="date" type="col" interval="month"/>
+                <field name="gallons" type="measure"/>
+                <field name="fuel_subtotal" type="measure"/>
+                <field name="fuel_tax_amount" type="measure"/>
+                <field name="fuel_total_cost" type="measure"/>
+                <field name="km_per_gallon" type="measure"/>
+                <field name="cost_per_km" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="fleet_fuel_service_migration_wizard_view_form" model="ir.ui.view">
+        <field name="name">fleet.fuel.service.migration.wizard.form</field>
+        <field name="model">fleet.fuel.service.migration.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Migrar servicios de combustible">
+                <group>
+                    <field name="service_type_id" options="{'no_create': True}"/>
+                    <field name="pending_count" readonly="1"/>
+                </group>
+                <footer>
+                    <button name="action_migrate" string="Crear borradores" type="object" class="btn-primary" invisible="pending_count == 0"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_fleet_fuel_service_migration" model="ir.actions.act_window">
+        <field name="name">Migrar servicios de combustible</field>
+        <field name="res_model">fleet.fuel.service.migration.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_fleet_fuel_service_migration"
+              name="Migrar servicios"
+              parent="menu_fleet_fuel_control"
+              action="action_fleet_fuel_service_migration"
+              sequence="5"
+              groups="fleet.fleet_group_manager"/>
+</odoo>
