@@ -7,6 +7,8 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 class FleetVehicleLogFuel(models.Model):
     _inherit = "fleet.vehicle.log.fuel"
 
+    liter = fields.Float(digits=(16, 3))
+    price_per_liter = fields.Float(digits=(16, 6))
     gallons = fields.Float(
         string="Galones",
         related="liter",
