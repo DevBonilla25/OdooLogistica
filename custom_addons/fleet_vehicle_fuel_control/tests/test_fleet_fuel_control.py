@@ -45,6 +45,18 @@ class TestFleetFuelControl(TransactionCase):
         self.assertEqual(log.km_per_gallon, 0.0)
         self.assertEqual(log.cost_per_km, 0.0)
 
+    def test_decimal_precision_and_monetary_rounding(self):
+        log = self._create_log(
+            gallons=10.123,
+            price_per_gallon=2.456789,
+        )
+
+        self.assertEqual(log.gallons, 10.123)
+        self.assertEqual(log.price_per_gallon, 2.456789)
+        self.assertEqual(log.fuel_subtotal, 24.87)
+        self.assertEqual(log.fuel_tax_amount, 3.73)
+        self.assertEqual(log.fuel_total_cost, 28.60)
+        self.assertEqual(log.amount, 28.60)
     def test_onchange_updates_costs_before_saving(self):
         log = self.env["fleet.vehicle.log.fuel"].new(
             {
