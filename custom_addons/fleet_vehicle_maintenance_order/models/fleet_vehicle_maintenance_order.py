@@ -233,20 +233,47 @@ class FleetVehicleMaintenanceOrder(models.Model):
 
     def action_approve(self):
         self.write({"state": "approved", "approval_date": fields.Datetime.now()})
+        for order in self:
+            order._reserve_stock_parts(raise_if_empty=False)
 
     def action_start_execution(self):
+        for order in self:
+            order._reserve_stock_parts(raise_if_empty=False)
         self.write({"state": "execution", "start_date": fields.Datetime.now()})
 
     def action_parts_pending(self):
         self._set_state("parts_pending")
 
     def action_finish(self):
+        for order in self:
+            pending_purchase_lines = order.part_line_ids.filtered(
+                lambda line: line.source == "purchase"
+                and line.purchase_state != "received"
+                and not line.consumed
+            )
+            if pending_purchase_lines:
+                raise UserError(
+                    _("No puede finalizar mientras existan repuestos pendientes de recibir: %s.")
+                    % ", ".join(pending_purchase_lines.mapped("name"))
+                )
+            undefined_lines = order.part_line_ids.filtered(lambda line: line.source == "unknown")
+            if undefined_lines:
+                raise UserError(
+                    _("Defina el origen de estos repuestos antes de finalizar: %s.")
+                    % ", ".join(undefined_lines.mapped("name"))
+                )
+            order._reserve_stock_parts(raise_if_empty=False)
+            order._consume_stock_parts(raise_if_empty=False)
         self.write({"state": "finished", "finish_date": fields.Datetime.now()})
 
     def action_close(self):
         self.write({"state": "closed", "close_date": fields.Datetime.now()})
 
     def action_cancel(self):
+        for order in self:
+            if order.part_line_ids.filtered("consumed"):
+                raise UserError(_("No puede cancelar una orden que ya tiene repuestos consumidos."))
+            order._release_stock_reservations(raise_if_empty=False)
         self._set_state("cancelled")
 
     def action_reset_to_reported(self):
@@ -274,26 +301,24 @@ class FleetVehicleMaintenanceOrder(models.Model):
             "context": {"default_fleet_maintenance_order_id": self.id},
         }
 
-    def action_consume_stock_parts(self):
+    def action_release_stock_reservations(self):
         for order in self:
-            order._consume_stock_parts()
-
-    def action_reserve_stock_parts(self):
-        for order in self:
-            order._reserve_stock_parts()
+            order._release_stock_reservations()
 
     def action_create_parts_rfq(self):
         for order in self:
             order._create_parts_rfq()
 
-    def _consume_stock_parts(self):
+    def _consume_stock_parts(self, raise_if_empty=True):
         self.ensure_one()
         if self.state not in ("approved", "execution", "parts_pending"):
             raise UserError(_("Solo puede consumir repuestos cuando la orden esta aprobada o en ejecucion."))
 
         lines = self.part_line_ids.filtered(lambda line: line.stock_move_id.state == "assigned")
         if not lines:
-            raise UserError(_("No hay repuestos reservados pendientes de consumo."))
+            if raise_if_empty:
+                raise UserError(_("No hay repuestos reservados pendientes de consumo."))
+            return
 
         consumed_moves = self.env["stock.move"]
         for line in lines:
@@ -313,7 +338,7 @@ class FleetVehicleMaintenanceOrder(models.Model):
             % (_("Repuestos consumidos desde bodega:"), Markup(body_lines))
         )
 
-    def _reserve_stock_parts(self):
+    def _reserve_stock_parts(self, raise_if_empty=True):
         self.ensure_one()
         if self.state not in ("approved", "execution", "parts_pending"):
             raise UserError(_("Solo puede reservar repuestos cuando la orden esta aprobada o en ejecucion."))
@@ -322,7 +347,9 @@ class FleetVehicleMaintenanceOrder(models.Model):
             and (line.source == "stock" or (line.source == "purchase" and line.purchase_state == "received"))
         )
         if not lines:
-            raise UserError(_("No hay repuestos disponibles pendientes de reserva."))
+            if raise_if_empty:
+                raise UserError(_("No hay repuestos disponibles pendientes de reserva."))
+            return
 
         reserved_moves = self.env["stock.move"]
         for line in lines:
@@ -339,6 +366,22 @@ class FleetVehicleMaintenanceOrder(models.Model):
             body=Markup("<p>%s</p><ul>%s</ul>")
             % (_("Repuestos reservados en bodega:"), Markup(body_lines))
         )
+
+    def _release_stock_reservations(self, raise_if_empty=True):
+        self.ensure_one()
+        lines = self.part_line_ids.filtered(
+            lambda line: line.stock_move_id.state
+            in ("draft", "waiting", "confirmed", "partially_available", "assigned")
+        )
+        if not lines:
+            if raise_if_empty:
+                raise UserError(_("No hay reservas pendientes para liberar."))
+            return
+
+        moves = lines.mapped("stock_move_id")
+        moves._action_cancel()
+        lines.write({"stock_move_id": False})
+        self.message_post(body=_("Se liberaron las reservas pendientes de repuestos."))
 
     def _create_parts_rfq(self):
         self.ensure_one()
@@ -474,7 +517,6 @@ class FleetVehicleMaintenancePartLine(models.Model):
     reserved = fields.Boolean(
         string="Reservado",
         compute="_compute_reserved",
-        store=True,
     )
     suggested_vendor_id = fields.Many2one(
         "res.partner",
@@ -513,6 +555,18 @@ class FleetVehicleMaintenancePartLine(models.Model):
     subtotal = fields.Monetary(string="Subtotal", compute="_compute_subtotal", store=True)
     currency_id = fields.Many2one(related="order_id.currency_id", readonly=True)
     state = fields.Selection(related="order_id.state", readonly=True)
+
+    def write(self, vals):
+        protected_fields = {"product_id", "name", "quantity", "uom_id", "source", "source_location_id"}
+        if protected_fields.intersection(vals):
+            locked_lines = self.filtered(
+                lambda line: line.stock_move_id.state in ("assigned", "done")
+            )
+            if locked_lines:
+                raise UserError(
+                    _("Libere la reserva antes de modificar el producto, la cantidad, el origen o la ubicacion.")
+                )
+        return super().write(vals)
 
     @api.onchange("product_id")
     def _onchange_product_id(self):
